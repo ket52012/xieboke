@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博文生成器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&family=Fira+Code:wght@400&display=swap">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+            background: linear-gradient(to bottom, #1e2227, #2d333b);
+            color: #e9ecef;
+            min-height: 100vh;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1600px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .form-container, .preview-container {
+            background: rgba(30, 34, 39, 0.95);
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid #444;
+        }
+        .form-container {
+            flex: 1;
+            min-width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .preview-container {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            max-height: 80vh;
+        }
+        details {
+            margin-bottom: 8px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 8px;
+        }
+        summary {
+            font-size: 16px;
+            font-weight: bold;
+            color: #e9ecef;
+            cursor: pointer;
+            padding: 6px;
+            background: #2d333b;
+            border-radius: 4px;
+        }
+        summary:hover {
+            background: #3a414a;
+        }
+        .form-group {
+            margin-bottom: 8px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+            color: #e9ecef;
+        }
+        .form-group .required::after {
+            content: '*';
+            color: #dc3545;
+            margin-left: 4px;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #555;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            background: #2d333b;
+            color: #e9ecef;
+            transition: border-color 0.3s;
+        }
+        .form-group input:hover, .form-group textarea:hover, .form-group select:hover {
+            border-color: #007bff;
+        }
+        .form-group textarea {
+            resize: vertical;
+        }
+        .form-group textarea#description {
+            min-height: 100px;
+        }
+        .form-group textarea#content {
+            min-height: 600px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .input-group, .generate-group, .link-group {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        .input-group input, .generate-group input, .generate-group textarea, .link-group input {
+            flex: 1;
+        }
+        .input-group button, .generate-group button, .link-group button {
+            flex-shrink: 0;
+            padding: 6px 12px;
+            background: linear-gradient(to bottom, #28a745, #218838);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        .input-group button:hover, .generate-group button:hover, .link-group button:hover {
+            background: linear-gradient(to bottom, #218838, #1c7a30);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+        button.generate-btn {
+            background: linear-gradient(to bottom, #007bff, #0056b3);
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        button.generate-btn:hover {
+            background: linear-gradient(to bottom, #0056b3, #004085);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: #2d333b;
+            border: 1px solid #444;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 13px;
+            color: #e9ecef;
+            transition: background 0.3s;
+        }
+        .tab.active {
+            background: #3a414a;
+            font-weight: bold;
+        }
+        #markdownOutput, #articlePreview {
+            width: 100%;
+            max-height: 80vh;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 12px;
+            background: #2d333b;
+            color: #f8f8f8;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            overflow-y: auto;
+            margin-bottom: 8px;
+            white-space: pre-wrap;
+        }
+        #articlePreview {
+            background: #1e2227;
+            color: #e9ecef;
+            font-family: 'Noto Sans SC', Arial, sans-serif;
+            padding: 16px;
+            line-height: 1.7;
+        }
+        .copy-button {
+            align-self: flex-end;
+            background: linear-gradient(to bottom, #007bff, #0056b3);
+            color: #fff;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        .copy-button:hover {
+            background: linear-gradient(to bottom, #0056b3, #004085);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .markdown-tips {
+            background: #2d333b;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #e9ecef;
+        }
+        .markdown-tips h4 {
+            margin: 0 0 4px;
+            font-size: 13px;
+        }
+        .markdown-tips ul {
+            margin: 0;
+            padding-left: 16px;
+        }
+        .form-container::-webkit-scrollbar,
+        #markdownOutput::-webkit-scrollbar,
+        #articlePreview::-webkit-scrollbar {
+            width: 6px;
+        }
+        .form-container::-webkit-scrollbar-track,
+        #markdownOutput::-webkit-scrollbar-track,
+        #articlePreview::-webkit-scrollbar-track {
+            background: #2d333b;
+            border-radius: 4px;
+        }
+        .form-container::-webkit-scrollbar-thumb,
+        #markdownOutput::-webkit-scrollbar-thumb,
+        #articlePreview::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+        .form-container::-webkit-scrollbar-thumb:hover,
+        #markdownOutput::-webkit-scrollbar-thumb:hover,
+        #articlePreview::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+        .post-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #e9ecef;
+        }
+        .post-meta {
+            font-size: 13px;
+            color: #adb5bd;
+            margin-bottom: 16px;
+        }
+        .post-meta span {
+            margin-right: 8px;
+        }
+        .post-body {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #e9ecef;
+        }
+        .post-body h1, .post-body h2, .post-body h3 {
+            margin: 16px 0 8px;
+            font-weight: bold;
+            color: #e9ecef;
+        }
+        .post-body h1 { font-size: 22px; }
+        .post-body h2 { font-size: 18px; }
+        .post-body h3 { font-size: 16px; }
+        .post-body p {
+            margin-bottom: 8px;
+        }
+        .post-body a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .post-body a:hover {
+            text-decoration: underline;
+        }
+        .post-body code {
+            background: #3a414a;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+        }
+        .post-body pre {
+            background: #3a414a;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            accent-color: #007bff;
+        }
+        .checkbox-group label {
+            font-size: 13px;
+            color: #e9ecef;
+        }
+        .content-section {
+            margin-bottom: 8px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .form-container, .preview-container {
+                max-height: none;
+            }
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #e9ecef;">博文信息填写</h2>
+            <form id="articleForm">
+                <details open>
+                    <summary>基本信息</summary>
+                    <div class="form-group">
+                        <label for="title" class="required">博文标题：</label>
+                        <input type="text" id="title" placeholder="请输入标题" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cover">博文缩略图：</label>
+                        <input type="text" id="cover" value="https://img.090227.xyz/file/ae62475a131f3734a201c.png" placeholder="请输入缩略图 URL">
+                    </div>
+                    <div class="grid-3">
+                        <div class="form-group generate-group">
+                            <div>
+                                <label for="tags">文章标签：</label>
+                                <input type="text" id="tags" placeholder="用逗号分隔，如 技术,编程">
+                            </div>
+                            <button type="button" onclick="generateTags()">生成</button>
+                        </div>
+                        <div class="form-group generate-group">
+                            <div>
+                                <label for="categories">文章分类：</label>
+                                <input type="text" id="categories" placeholder="用逗号分隔，如 教程,前端">
+                            </div>
+                        </div>
+                        <div class="form-group generate-group">
+                            <div>
+                                <label for="keywords">文章关键字：</label>
+                                <input type="text" id="keywords" placeholder="用逗号分隔，如 SEO,博客">
+                            </div>
+                            <button type="button" onclick="generateKeywords()">生成</button>
+                        </div>
+                    </div>
+                    <div class="form-group generate-group">
+                        <div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="useTitleForDescription">
+                                <label for="useTitleForDescription">使用标题作为摘要</label>
+                            </div>
+                            <label for="description">文章摘要：</label>
+                            <textarea id="description" placeholder="请输入摘要"></textarea>
+                        </div>
+                        <button type="button" onclick="generateDescription()">生成</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="top">置顶排序：</label>
+                        <input type="number" id="top" placeholder="数值越大越靠前">
+                    </div>
+                </details>
+                <div class="content-section">
+                    <h3 style="margin: 0 0 8px; font-size: 16px; color: #e9ecef;">正文编辑</h3>
+                    <div class="markdown-tips">
+                        <h4>Markdown 语法提示</h4>
+                        <ul>
+                            <li><strong>标题</strong>: <code># 一级标题</code>, <code>## 二级标题</code>, <code>### 三级标题</code></li>
+                            <li><strong>斜体</strong>: <code>*斜体*</code></li>
+                            <li><strong>列表</strong>: <code>* 列表项</code> 或 <code>- 列表项</code></li>
+                        </ul>
+                    </div>
+                    <div class="form-group">
+                        <label for="content">正文内容：</label>
+                        <textarea id="content" placeholder="支持 Markdown 格式，如 # 标题、- 列表、``` 代码块"></textarea>
+                    </div>
+                    <div class="form-group input-group">
+                        <div>
+                            <label for="code_input">插入代码：</label>
+                            <input type="text" id="code_input" placeholder="请输入代码，如 print('Hello')">
+                        </div>
+                        <button type="button" onclick="insertCode()">插入代码</button>
+                    </div>
+                    <div class="form-group link-group">
+                        <div>
+                            <label for="super_text">链接文本：</label>
+                            <input type="text" id="super_text" placeholder="请输入文本，如 点击跳转">
+                        </div>
+                        <div>
+                            <label for="super_link">跳转链接：</label>
+                            <input type="text" id="super_link" placeholder="请输入链接，如 https://google.com">
+                        </div>
+                        <button type="button" onclick="insertSuperLink()">插入链接</button>
+                    </div>
+                    <div class="form-group input-group">
+                        <div>
+                            <label for="video_link">UP主视频链接：</label>
+                            <input type="text" id="video_link" placeholder="请输入视频链接，如 https://www.youtube.com/embed/xxx">
+                        </div>
+                    </div>
+                </div>
+                <details>
+                    <summary>展示设置</summary>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label for="comments">评论模块：</label>
+                            <input type="checkbox" id="comments" checked>
+                        </div>
+                        <div class="form-group">
+                            <label for="toc">显示目录：</label>
+                            <input type="checkbox" id="toc" checked>
+                        </div>
+                        <div class="form-group">
+                            <label for="toc_number">目录编号：</label>
+                            <input type="checkbox" id="toc_number" checked>
+                        </div>
+                        <div class="form-group">
+                            <label for="toc_style_simple">简洁目录：</label>
+                            <input type="checkbox" id="toc_style_simple">
+                        </div>
+                        <div class="form-group">
+                            <label for="mathjax">MathJax：</label>
+                            <input type="checkbox" id="mathjax">
+                        </div>
+                        <div class="form-group">
+                            <label for="katex">KaTeX：</label>
+                            <input type="checkbox" id="katex">
+                        </div>
+                        <div class="form-group">
+                            <label for="aplayer">APlayer：</label>
+                            <input type="checkbox" id="aplayer">
+                        </div>
+                        <div class="form-group">
+                            <label for="highlight_shrink">代码展开：</label>
+                            <input type="checkbox" id="highlight_shrink">
+                        </div>
+                        <div class="form-group">
+                            <label for="aside">侧边栏：</label>
+                            <input type="checkbox" id="aside" checked>
+                        </div>
+                    </div>
+                </details>
+                <details>
+                    <summary>版权信息</summary>
+                    <div class="form-group">
+                        <label for="copyright">版权模块：</label>
+                        <input type="checkbox" id="copyright" checked>
+                    </div>
+                    <div class="form-group">
+                        <label for="copyright_author">版权作者：</label>
+                        <input type="text" id="copyright_author" value="胡广生" placeholder="请输入作者姓名">
+                    </div>
+                    <div class="form-group">
+                        <label for="copyright_author_href">作者链接：</label>
+                        <input type="text" id="copyright_author_href" value="https://胡广生.com" placeholder="请输入作者主页">
+                    </div>
+                    <div class="form-group">
+                        <label for="copyright_url">版权链接：</label>
+                        <input type="text" id="copyright_url" value="https://胡广生.com" placeholder="请输入文章出处">
+                    </div>
+                    <div class="form-group">
+                        <label for="copyright_info">版权声明：</label>
+                        <textarea id="copyright_info" placeholder="请输入版权声明">本文由胡广生原创，仅作为学习，研究，不得用作非法用途，否则产生的一切后果自行承担。</textarea>
+                    </div>
+                </details>
+                <button type="button" class="generate-btn" onclick="generateMarkdown()">生成 Markdown</button>
+            </form>
+        </div>
+        <div class="preview-container">
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: #e9ecef;">输出与预览</h2>
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('articlePreview')">文章预览</div>
+                <div class="tab" onclick="showTab('markdownOutput')">Markdown 输出</div>
+            </div>
+            <div id="articlePreview"></div>
+            <pre id="markdownOutput" style="display: none;"></pre>
+            <button class="copy-button" onclick="copyMarkdown()">复制 Markdown</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script>
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        function formatDate(date) {
+            try {
+                const d = date || new Date();
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const seconds = String(d.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            } catch (e) {
+                console.error('日期格式化错误:', e);
+                return '';
+            }
+        }
+
+        function extractKeywords(text) {
+            try {
+                const words = text.match(/[\u4e00-\u9fa5]{2,}|\w{3,}/g) || [];
+                const stopWords = ['的', '是', '在', '了', '和', '与', '或', 'the', 'and', 'is', 'are', 'in', 'to'];
+                const wordFreq = {};
+                words.forEach(word => {
+                    if (!stopWords.includes(word.toLowerCase())) {
+                        wordFreq[word] = (wordFreq[word] || 0) + 1;
+                    }
+                });
+                return Object.keys(wordFreq)
+                    .sort((a, b) => wordFreq[b] - wordFreq[a])
+                    .slice(0, 5)
+                    .join(', ');
+            } catch (e) {
+                console.error('提取关键词错误:', e);
+                return '';
+            }
+        }
+
+        function generateTags() {
+            try {
+                const title = document.getElementById('title').value;
+                if (!title) {
+                    alert('请先输入博文标题！');
+                    return;
+                }
+                const tags = extractKeywords(title);
+                document.getElementById('tags').value = tags || '博客,技术';
+                updatePreview();
+            } catch (e) {
+                console.error('生成标签错误:', e);
+                alert('生成标签失败，请检查控制台错误');
+            }
+        }
+
+        function generateKeywords() {
+            try {
+                const title = document.getElementById('title').value;
+                if (!title) {
+                    alert('请先输入博文标题！');
+                    return;
+                }
+                const keywords = extractKeywords(title);
+                document.getElementById('keywords').value = keywords || 'SEO,博客';
+                updatePreview();
+            } catch (e) {
+                console.error('生成关键字错误:', e);
+                alert('生成关键字失败，请检查控制台错误');
+            }
+        }
+
+        function generateDescription() {
+            try {
+                const title = document.getElementById('title').value;
+                const useTitle = document.getElementById('useTitleForDescription').checked;
+                if (!title) {
+                    alert('请先输入博文标题！');
+                    return;
+                }
+                let description;
+                if (useTitle) {
+                    description = title;
+                } else {
+                    const tags = document.getElementById('tags').value.split(',').map(t => t.trim()).filter(t => t);
+                    const keywords = document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(k => k);
+                    description = `${title}，涉及${tags.join('、') || '技术'}，关键词：${keywords.join('、') || '博客'}`;
+                }
+                document.getElementById('description').value = description.slice(0, 150) + (description.length > 150 ? '...' : '');
+                updatePreview();
+            } catch (e) {
+                console.error('生成摘要错误:', e);
+                alert('生成摘要失败，请检查控制台错误');
+            }
+        }
+
+        function insertCode() {
+            try {
+                const codeInput = document.getElementById('code_input').value;
+                if (!codeInput) {
+                    alert('请输入代码！');
+                    return;
+                }
+                const content = document.getElementById('content');
+                const codeBlock = `\`\`\`plaintext\n${codeInput}\n\`\`\`\n`;
+                insertAtCursor(content, codeBlock);
+                document.getElementById('code_input').value = '';
+                updatePreview();
+            } catch (e) {
+                console.error('插入代码错误:', e);
+                alert('插入代码失败，请检查控制台错误');
+            }
+        }
+
+        function insertSuperLink() {
+            try {
+                const text = document.getElementById('super_text').value;
+                const link = document.getElementById('super_link').value;
+                if (!text || !link) {
+                    alert('请输入文本和链接！');
+                    return;
+                }
+                const content = document.getElementById('content');
+                const linkMarkdown = `[${text}](${link})\n`;
+                insertAtCursor(content, linkMarkdown);
+                document.getElementById('super_text').value = '';
+                document.getElementById('super_link').value = '';
+                updatePreview();
+            } catch (e) {
+                console.error('插入链接错误:', e);
+                alert('插入链接失败，请检查控制台错误');
+            }
+        }
+
+        function insertAtCursor(textarea, text) {
+            try {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const value = textarea.value;
+                textarea.value = value.substring(0, start) + text + value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + text.length;
+                textarea.focus();
+            } catch (e) {
+                console.error('插入文本错误:', e);
+                alert('插入文本失败，请检查控制台错误');
+            }
+        }
+
+        function generateVideoCode(videoLink) {
+            if (!videoLink) return '';
+            return `<div class="video-container">\n<iframe src="${videoLink}" frameborder="0" allowfullscreen></iframe>\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
+        }
+
+        function parseFrontMatter(markdown) {
+            try {
+                const frontMatterRegex = /^---\n([\s\S]*?)\n---\n/;
+                const match = markdown.match(frontMatterRegex);
+                if (!match) return { frontMatter: {}, content: markdown };
+                const frontMatterLines = match[1].split('\n');
+                const frontMatter = {};
+                let currentKey = null;
+                frontMatterLines.forEach(line => {
+                    if (line.includes(':')) {
+                        const [key, value] = line.split(':').map(s => s.trim());
+                        if (value) {
+                            frontMatter[key] = value.replace(/^"|"$/g, '');
+                            currentKey = key;
+                        } else {
+                            frontMatter[key] = [];
+                            currentKey = key;
+                        }
+                    } else if (line.startsWith('  - ') && currentKey) {
+                        frontMatter[currentKey].push(line.replace('  - ', '').trim());
+                    }
+                });
+                const content = markdown.replace(frontMatterRegex, '');
+                return { frontMatter, content };
+            } catch (e) {
+                console.error('解析 Front Matter 错误:', e);
+                return { frontMatter: {}, content: markdown };
+            }
+        }
+
+        function renderPreview(markdown) {
+            try {
+                const { frontMatter, content } = parseFrontMatter(markdown);
+                const preview = document.getElementById('articlePreview');
+                let html = `<h1 class="post-title">${frontMatter.title || '未填写标题'}</h1>`;
+                html += `<div class="post-meta">`;
+                if (frontMatter.tags && Array.isArray(frontMatter.tags)) {
+                    html += `<span>标签: ${frontMatter.tags.join(', ')}</span>`;
+                }
+                html += `</div>`;
+                const markedContent = marked.parse(content, { breaks: true });
+                html += `<div class="post-body">${DOMPurify.sanitize(markedContent)}</div>`;
+                preview.innerHTML = html;
+                Prism.highlightAllUnder(preview);
+            } catch (e) {
+                console.error('渲染预览错误:', e);
+                document.getElementById('articlePreview').innerHTML = '<p>预览渲染失败，请检查控制台错误</p>';
+            }
+        }
+
+        function generateMarkdown(updateOutput = true) {
+            try {
+                const form = document.getElementById('articleForm');
+                const title = form.querySelector('#title').value || '未填写标题';
+                const cover = form.querySelector('#cover').value || '';
+                const date = formatDate();
+                const tags = form.querySelector('#tags').value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                const categories = form.querySelector('#categories').value.split(',').map(cat => cat.trim()).filter(cat => cat);
+                const keywords = form.querySelector('#keywords').value.split(',').map(kw => kw.trim()).filter(kw => kw);
+                const description = form.querySelector('#description').value || '';
+                const top = form.querySelector('#top').value || '';
+                const comments = form.querySelector('#comments').checked;
+                const toc = form.querySelector('#toc').checked;
+                const toc_number = form.querySelector('#toc_number').checked;
+                const toc_style_simple = form.querySelector('#toc_style_simple').checked;
+                const copyright = form.querySelector('#copyright').checked;
+                const copyright_author = form.querySelector('#copyright_author').value || '';
+                const copyright_author_href = form.querySelector('#copyright_author_href').value || '';
+                const copyright_url = form.querySelector('#copyright_url').value || '';
+                const copyright_info = form.querySelector('#copyright_info').value || '';
+                const mathjax = form.querySelector('#mathjax').checked;
+                const katex = form.querySelector('#katex').checked;
+                const aplayer = form.querySelector('#aplayer').checked;
+                const highlight_shrink = form.querySelector('#highlight_shrink').checked;
+                const aside = form.querySelector('#aside').checked;
+                const video_link = form.querySelector('#video_link').value || '';
+                const content = form.querySelector('#content').value || '';
+
+                let markdown = `---
+title: ${title}
+${cover ? `cover: ${cover}` : 'cover:'}
+date: ${date}
+updated:
+${tags.length ? `tags:\n${tags.map(tag => `  - ${tag}`).join('\n')}` : 'tags:'}
+${categories.length ? `categories:\n${categories.map(cat => `  - ${cat}`).join('\n')}` : 'categories:'}
+${keywords.length ? `keywords:\n${keywords.map(kw => `  - ${kw}`).join('\n')}` : 'keywords:'}
+${description ? `description: ${description}` : 'description:'}
+${top ? `top: ${top}` : 'top:'}
+comments: ${comments}
+toc: ${toc}
+toc_number: ${toc_number}
+toc_style_simple: ${toc_style_simple}
+copyright: ${copyright}
+${copyright_author ? `copyright_author: ${copyright_author}` : 'copyright_author:'}
+${copyright_author_href ? `copyright_author_href: ${copyright_author_href}` : 'copyright_author_href:'}
+${copyright_url ? `copyright_url: ${copyright_url}` : 'copyright_url:'}
+${copyright_info ? `copyright_info: ${copyright_info}` : 'copyright_info:'}
+mathjax: ${mathjax}
+katex: ${katex}
+aplayer: ${aplayer}
+highlight_shrink: ${highlight_shrink}
+aside: ${aside}
+---
+
+${video_link ? generateVideoCode(video_link) : ''}${content}
+`;
+
+                if (updateOutput) {
+                    document.getElementById('markdownOutput').textContent = markdown;
+                }
+                renderPreview(markdown);
+                return markdown;
+            } catch (e) {
+                console.error('生成 Markdown 错误:', e);
+                alert('生成 Markdown 失败，请检查控制台错误');
+                return '';
+            }
+        }
+
+        function copyMarkdown() {
+            try {
+                const markdown = document.getElementById('markdownOutput').textContent;
+                if (!markdown) {
+                    alert('没有可复制的 Markdown 内容！请先生成 Markdown。');
+                    return;
+                }
+                navigator.clipboard.writeText(markdown).then(() => {
+                    alert('Markdown 已复制到剪贴板！');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    alert('复制失败，请手动复制右侧内容');
+                });
+            } catch (e) {
+                console.error('复制 Markdown 错误:', e);
+                alert('复制 Markdown 失败，请检查控制台错误');
+            }
+        }
+
+        function showTab(tabId) {
+            try {
+                const markdownOutput = document.getElementById('markdownOutput');
+                const articlePreview = document.getElementById('articlePreview');
+                const tabs = document.querySelectorAll('.tab');
+                if (tabId === 'markdownOutput') {
+                    markdownOutput.style.display = 'block';
+                    articlePreview.style.display = 'none';
+                } else {
+                    markdownOutput.style.display = 'none';
+                    articlePreview.style.display = 'block';
+                }
+                tabs.forEach(tab => tab.classList.remove('active'));
+                document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
+            } catch (e) {
+                console.error('切换选项卡错误:', e);
+                alert('选项卡切换失败，请检查控制台错误');
+            }
+        }
+
+        function syncPreviewScroll() {
+            try {
+                const textarea = document.getElementById('content');
+                const preview = document.getElementById('articlePreview');
+                const markdown = generateMarkdown(false);
+                const { content } = parseFrontMatter(markdown);
+                const cursorPos = textarea.selectionStart;
+                const lines = textarea.value.substring(0, cursorPos).split('\n');
+                const currentLine = lines.length - 1;
+                const lineContent = lines[currentLine];
+                let targetElement = null;
+                if (lineContent.startsWith('#')) {
+                    const headerLevel = lineContent.match(/^#+/)[0].length;
+                    const headerText = lineContent.replace(/^#+/, '').trim();
+                    targetElement = preview.querySelector(`h${headerLevel}:contains('${headerText}')`);
+                } else {
+                    const paragraphs = content.split('\n\n').filter(p => p.trim());
+                    const paraIndex = Math.min(currentLine, paragraphs.length - 1);
+                    const paraText = paragraphs[paraIndex]?.trim();
+                    if (paraText) {
+                        targetElement = preview.querySelector(`p:contains '${paraText}'`);
+                    }
+                }
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    const scrollRatio = textarea.scrollTop / (textarea.scrollHeight - textarea.clientHeight);
+                    preview.scrollTop = scrollRatio * (preview.scrollHeight - preview.clientHeight);
+                }
+            } catch (e) {
+                console.error('同步滚动错误:', e);
+            }
+        }
+
+        function toggleDescriptionInput() {
+            try {
+                const useTitle = document.getElementById('useTitleForDescription').checked;
+                const description = document.getElementById('description');
+                const title = document.getElementById('title').value;
+                description.disabled = useTitle;
+                if (useTitle && title) {
+                    description.value = title.slice(0, 150);
+                }
+                updatePreview();
+            } catch (e) {
+                console.error('切换摘要输入错误:', e);
+                alert('切换摘要输入失败，请检查控制台错误');
+            }
+        }
+
+        const debouncedSyncScroll = debounce(syncPreviewScroll, 200);
+        function updatePreview() {
+            generateMarkdown(false);
+            syncPreviewScroll();
+        }
+
+        const debouncedUpdatePreview = debounce(updatePreview, 200);
+        document.getElementById('articleForm').querySelectorAll('input, textarea, select').forEach(element => {
+            element.addEventListener('input', debouncedUpdatePreview);
+            element.addEventListener('change', debouncedUpdatePreview);
+        });
+
+        document.getElementById('content').addEventListener('scroll', debouncedSyncScroll);
+        document.getElementById('content').addEventListener('input', debouncedSyncScroll);
+        document.getElementById('useTitleForDescription').addEventListener('change', toggleDescriptionInput);
+
+        try {
+            generateMarkdown(true);
+        } catch (e) {
+            console.error('初始化错误:', e);
+        }
+
+        // jQuery-like :contains selector
+        HTMLElement.prototype.containsText = function(text) {
+            return this.textContent.includes(text);
+        };
+        document.querySelectorAll(':contains').forEach(el => {
+            el.matches = (selector) => {
+                if (selector.includes(':contains')) {
+                    const [tag, content] = selector.split(':contains');
+                    return el.tagName.toLowerCase() === tag.toLowerCase() && el.containsText(content.replace(/['"]/g, ''));
+                }
+                return el.matches(selector);
+            };
+        });
+    </script>
+</body>
+</html>
