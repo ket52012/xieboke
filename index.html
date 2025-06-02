@@ -336,7 +336,7 @@
                     </div>
                     <div class="form-group">
                         <label for="cover">博文缩略图：</label>
-                        <input type="text" id="cover" value="https://img.090227.xyz/file/ae62475a131f3734a201c.png" placeholder="请输入缩略图 URL">
+                        <input type="text" id="cover" value="" placeholder="请输入缩略图 URL">
                     </div>
                     <div class="grid-3">
                         <div class="form-group generate-group">
@@ -410,6 +410,13 @@
                     </div>
                     <div class="form-group input-group">
                         <div>
+                            <label for="image_link">插入图片链接：</label>
+                            <input type="text" id="image_link" placeholder="请输入图片链接，如 https://example.com/image.jpg">
+                        </div>
+                        <button type="button" onclick="insertImage()">插入图片</button>
+                    </div>
+                    <div class="form-group input-group">
+                        <div>
                             <label for="video_link">UP主视频链接：</label>
                             <input type="text" id="video_link" placeholder="请输入视频链接，如 https://www.youtube.com/embed/xxx">
                         </div>
@@ -460,7 +467,7 @@
                     <summary>版权信息</summary>
                     <div class="form-group">
                         <label for="copyright">版权模块：</label>
-                        <input type="checkbox" id="copyright" checked>
+                        <input type="checkbox" id muodost="copyright" checked>
                     </div>
                     <div class="form-group">
                         <label for="copyright_author">版权作者：</label>
@@ -637,6 +644,24 @@
             }
         }
 
+        function insertImage() {
+            try {
+                const imageLink = document.getElementById('image_link').value;
+                if (!imageLink) {
+                    alert('请输入图片链接！');
+                    return;
+                }
+                const content = document.getElementById('content');
+                const imageMarkdown = `![图片](${imageLink})\n`;
+                insertAtCursor(content, imageMarkdown);
+                document.getElementById('image_link').value = '';
+                updatePreview();
+            } catch (e) {
+                console.error('插入图片错误:', e);
+                alert('插入图片失败，请检查控制台错误');
+            }
+        }
+
         function insertAtCursor(textarea, text) {
             try {
                 const start = textarea.selectionStart;
@@ -725,7 +750,7 @@
                 const copyright_author = form.querySelector('#copyright_author').value || '';
                 const copyright_author_href = form.querySelector('#copyright_author_href').value || '';
                 const copyright_url = form.querySelector('#copyright_url').value || '';
-                const copyright_info = form.querySelector('#copyright_info').value || '';
+                const copyright_info = form.querySelector('#missing text here
                 const mathjax = form.querySelector('#mathjax').checked;
                 const katex = form.querySelector('#katex').checked;
                 const aplayer = form.querySelector('#aplayer').checked;
