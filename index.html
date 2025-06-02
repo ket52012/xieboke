@@ -109,15 +109,15 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 8px;
         }
-        .input-group, .generate-group, .link-group {
+        .input-group, .generate-group, .link-group, .video-group {
             display: flex;
             gap: 8px;
             align-items: flex-end;
         }
-        .input-group input, .generate-group input, .generate-group textarea, .link-group input {
+        .input-group input, .generate-group input, .generate-group textarea, .link-group input, .video-group input {
             flex: 1;
         }
-        .input-group button, .generate-group button, .link-group button {
+        .input-group button, .generate-group button, .link-group button, .video-group button {
             flex-shrink: 0;
             padding: 6px 12px;
             background: linear-gradient(to bottom, #28a745, #218838);
@@ -129,7 +129,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             transition: all 0.3s;
         }
-        .input-group button:hover, .generate-group button:hover, .link-group button:hover {
+        .input-group button:hover, .generate-group button:hover, .link-group button:hover, .video-group button:hover {
             background: linear-gradient(to bottom, #218838, #1c7a30);
             box-shadow: 0 3px 6px rgba(0,0,0,0.3);
         }
@@ -336,7 +336,7 @@
                     </div>
                     <div class="form-group">
                         <label for="cover">博文缩略图：</label>
-                        <input type="text" id="cover" value="" placeholder="请输入缩略图 URL">
+                        <input type="text" id="cover" value="https://img.090227.xyz/file/ae62475a131f3734a201c.png" placeholder="请输入缩略图 URL">
                     </div>
                     <div class="grid-3">
                         <div class="form-group generate-group">
@@ -415,11 +415,12 @@
                         </div>
                         <button type="button" onclick="insertImage()">插入图片</button>
                     </div>
-                    <div class="form-group input-group">
+                    <div class="form-group video-group">
                         <div>
                             <label for="video_link">UP主视频链接：</label>
                             <input type="text" id="video_link" placeholder="请输入视频链接，如 https://www.youtube.com/embed/xxx">
                         </div>
+                        <button type="button" onclick="insertVideo()">插入视频</button>
                     </div>
                 </div>
                 <details>
@@ -467,7 +468,7 @@
                     <summary>版权信息</summary>
                     <div class="form-group">
                         <label for="copyright">版权模块：</label>
-                        <input type="checkbox" id muodost="copyright" checked>
+                        <input type="checkbox" id="copyright" checked>
                     </div>
                     <div class="form-group">
                         <label for="copyright_author">版权作者：</label>
@@ -662,6 +663,24 @@
             }
         }
 
+        function insertVideo() {
+            try {
+                const videoLink = document.getElementById('video_link').value;
+                if (!videoLink) {
+                    alert('请输入视频链接！');
+                    return;
+                }
+                const content = document.getElementById('content');
+                const videoMarkdown = generateVideoCode(videoLink);
+                insertAtCursor(content, videoMarkdown);
+                document.getElementById('video_link').value = '';
+                updatePreview();
+            } catch (e) {
+                console.error('插入视频错误:', e);
+                alert('插入视频失败，请检查控制台错误');
+            }
+        }
+
         function insertAtCursor(textarea, text) {
             try {
                 const start = textarea.selectionStart;
@@ -750,7 +769,7 @@
                 const copyright_author = form.querySelector('#copyright_author').value || '';
                 const copyright_author_href = form.querySelector('#copyright_author_href').value || '';
                 const copyright_url = form.querySelector('#copyright_url').value || '';
-                const copyright_info = form.querySelector('#missing text here
+                const copyright_info = form.querySelector('#copyright_info').value || '';
                 const mathjax = form.querySelector('#mathjax').checked;
                 const katex = form.querySelector('#katex').checked;
                 const aplayer = form.querySelector('#aplayer').checked;
@@ -766,7 +785,7 @@ date: ${date}
 updated:
 ${tags.length ? `tags:\n${tags.map(tag => `  - ${tag}`).join('\n')}` : 'tags:'}
 ${categories.length ? `categories:\n${categories.map(cat => `  - ${cat}`).join('\n')}` : 'categories:'}
-${keywords.length ? `keywords:\n${keywords.map(kw => `  - ${kw}`).join('\n')}` : 'keywords:'}
+${keywords.length ? `keywords:\n${keywords.map(kw => `  - ${kw}`)..join('\n')}` : 'keywords:'}
 ${description ? `description: ${description}` : 'description:'}
 ${top ? `top: ${top}` : 'top:'}
 comments: ${comments}
