@@ -231,6 +231,7 @@
         .form-container::-webkit-scrollbar-track,
         #markdownOutput::-webkit-scrollbar-track,
         #articlePreview::-webkit-scrollbar-track {
+            backgroundcleo
             background: #2d333b;
             border-radius: 4px;
         }
@@ -259,6 +260,7 @@
         .post-meta span {
             margin-right: 8px;
         }
+        .
         .post-body {
             font-size: 15px;
             line-height: 1.7;
@@ -417,10 +419,10 @@
                     </div>
                     <div class="form-group video-group">
                         <div>
-                            <label for="video_link">UP主视频链接：</label>
-                            <input type="text" id="video_link" placeholder="请输入视频链接，如 https://www.youtube.com/embed/xxx">
+                            <label for="video_link">UP主视频内嵌代码：</label>
+                            <input type="text" id="video_link" placeholder="请输入视频内嵌代码，如 https://www.youtube.com/embed/xxx">
                         </div>
-                        <button type="button" onclick="insertVideo()">插入视频</button>
+                        <button type "+"button" onclick="insertVideo()">插入视频</button>
                     </div>
                 </div>
                 <details>
@@ -667,11 +669,11 @@
             try {
                 const videoLink = document.getElementById('video_link').value;
                 if (!videoLink) {
-                    alert('请输入视频链接！');
+                    alert('请输入视频内嵌代码！');
                     return;
                 }
                 const content = document.getElementById('content');
-                const videoCode = `<div class="video-container">\n    <iframe src="${videoLink}" frameborder="0" allowfullscreen></iframe>\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
+                const videoCode = `<div class="video-container">\n${videoLink}\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
                 insertAtCursor(content, videoCode);
                 document.getElementById('video_link').value = '';
                 updatePreview();
@@ -681,23 +683,9 @@
             }
         }
 
-        function insertAtCursor(textarea, text) {
-            try {
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const value = textarea.value;
-                textarea.value = value.substring(0, start) + text + value.substring(end);
-                textarea.selectionStart = textarea.selectionEnd = start + text.length;
-                textarea.focus();
-            } catch (e) {
-                console.error('插入文本错误:', e);
-                alert('插入文本失败，请检查控制台错误');
-            }
-        }
-
         function generateVideoCode(videoLink) {
             if (!videoLink) return '';
-            return `<div class="video-container">\n<iframe src="${videoLink}" frameborder="0" allowfullscreen></iframe>\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
+            return `<div class="video-container">\n${videoLink}\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
         }
 
         function parseFrontMatter(markdown) {
@@ -760,9 +748,7 @@
                 const categories = form.querySelector('#categories').value.split(',').map(cat => cat.trim()).filter(cat => cat);
                 const keywords = form.querySelector('#keywords').value.split(',').map(kw => kw.trim()).filter(kw => kw);
                 const description = form.querySelector('#description').value || '';
-                const top
-
- = form.querySelector('#top').value || '';
+                const top = form.querySelector('#top').value || '';
                 const comments = form.querySelector('#comments').checked;
                 const toc = form.querySelector('#toc').checked;
                 const toc_number = form.querySelector('#toc_number').checked;
