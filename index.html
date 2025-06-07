@@ -671,8 +671,8 @@
                     return;
                 }
                 const content = document.getElementById('content');
-                const videoMarkdown = generateVideoCode(videoLink);
-                insertAtCursor(content, videoMarkdown);
+                const videoCode = `<div class="video-container">\n    <iframe src="${videoLink}" frameborder="0" allowfullscreen></iframe>\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
+                insertAtCursor(content, videoCode);
                 document.getElementById('video_link').value = '';
                 updatePreview();
             } catch (e) {
@@ -760,7 +760,9 @@
                 const categories = form.querySelector('#categories').value.split(',').map(cat => cat.trim()).filter(cat => cat);
                 const keywords = form.querySelector('#keywords').value.split(',').map(kw => kw.trim()).filter(kw => kw);
                 const description = form.querySelector('#description').value || '';
-                const top = form.querySelector('#top').value || '';
+                const top
+
+ = form.querySelector('#top').value || '';
                 const comments = form.querySelector('#comments').checked;
                 const toc = form.querySelector('#toc').checked;
                 const toc_number = form.querySelector('#toc_number').checked;
@@ -775,7 +777,6 @@
                 const aplayer = form.querySelector('#aplayer').checked;
                 const highlight_shrink = form.querySelector('#highlight_shrink').checked;
                 const aside = form.querySelector('#aside').checked;
-                const video_link = form.querySelector('#video_link').value || '';
                 const content = form.querySelector('#content').value || '';
 
                 let markdown = `---
@@ -804,7 +805,7 @@ highlight_shrink: ${highlight_shrink}
 aside: ${aside}
 ---
 
-${video_link ? generateVideoCode(video_link) : ''}${content}
+${content}
 `;
 
                 if (updateOutput) {
