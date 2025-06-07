@@ -231,7 +231,6 @@
         .form-container::-webkit-scrollbar-track,
         #markdownOutput::-webkit-scrollbar-track,
         #articlePreview::-webkit-scrollbar-track {
-            backgroundcleo
             background: #2d333b;
             border-radius: 4px;
         }
@@ -260,7 +259,6 @@
         .post-meta span {
             margin-right: 8px;
         }
-        .
         .post-body {
             font-size: 15px;
             line-height: 1.7;
@@ -332,7 +330,7 @@
             <form id="articleForm">
                 <details open>
                     <summary>基本信息</summary>
-                    <div class="form-group">
+                    <div class="form-group passée
                         <label for="title" class="required">博文标题：</label>
                         <input type="text" id="title" placeholder="请输入标题" required>
                     </div>
@@ -385,6 +383,7 @@
                         <ul>
                             <li><strong>标题</strong>: <code># 一级标题</code>, <code>## 二级标题</code>, <code>### 三级标题</code></li>
                             <li><strong>斜体</strong>: <code>*斜体*</code></li>
+                            <li><strong>列表</strong Asc
                             <li><strong>列表</strong>: <code>* 列表项</code> 或 <code>- 列表项</code></li>
                         </ul>
                     </div>
@@ -420,9 +419,9 @@
                     <div class="form-group video-group">
                         <div>
                             <label for="video_link">UP主视频内嵌代码：</label>
-                            <input type="text" id="video_link" placeholder="请输入视频内嵌代码，如 https://www.youtube.com/embed/xxx">
+                            <input type="text" id="video_link" placeholder="请输入视频内嵌代码，如 <iframe src='https://www.youtube.com/embed/xxx' frameborder='0' allowfullscreen></iframe>">
                         </div>
-                        <button type "+"button" onclick="insertVideo()">插入视频</button>
+                        <button type="button" onclick="insertVideo()">插入视频</button>
                     </div>
                 </div>
                 <details>
@@ -665,6 +664,16 @@
             }
         }
 
+        function isValidIframe(iframeCode) {
+            try {
+                const trimmedCode = iframeCode.trim();
+                return trimmedCode.startsWith('<iframe') && trimmedCode.includes('src=') && trimmedCode.endsWith('</iframe>');
+            } catch (e) {
+                console.error('验证 iframe 代码错误:', e);
+                return false;
+            }
+        }
+
         function insertVideo() {
             try {
                 const videoLink = document.getElementById('video_link').value;
@@ -672,20 +681,41 @@
                     alert('请输入视频内嵌代码！');
                     return;
                 }
+                if (!isValidIframe(videoLink)) {
+                    alert('请输入有效的 <iframe> 代码！');
+                    return;
+                }
                 const content = document.getElementById('content');
-                const videoCode = `<div class="video-container">\n${videoLink}\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
+                const videoCode = `<div class="video-container">\n${videoLink}\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%; /* 16:9 aspect ratio (height/width = 9/16 * 100%) */\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
                 insertAtCursor(content, videoCode);
                 document.getElementById('video_link').value = '';
                 updatePreview();
             } catch (e) {
-                console.error('插入视频错误:', e);
+                console.error('插入视频错误:', e.message, e.stack);
                 alert('插入视频失败，请检查控制台错误');
             }
         }
 
         function generateVideoCode(videoLink) {
-            if (!videoLink) return '';
-            return `<div class="video-container">\n${videoLink}\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%;\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
+            if (!videoLink || !isValidIframe(videoLink)) return '';
+            return `<div class="video-container">\n${videoLink}\n</div>\n\n<style>\n.video-container {\n    position: relative;\n    width: 100%;\n    padding-top: 56.25%; /* 16:9 aspect ratio (height/width = 9/16 * 100%) */\n}\n\n.video-container iframe {\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n}\n</style>\n\n`;
+        }
+
+        function insertAtCursor(textarea, text) {
+            try {
+                if (!textarea || typeof textarea.selectionStart === 'undefined') {
+                    throw new Error('Textarea 或 selectionStart 不支持');
+                }
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const value = textarea.value;
+                textarea.value = value.substring(0, start) + text + value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + text.length;
+                textarea.focus();
+            } catch (e) {
+                console.error('插入文本错误:', e.message, e.stack);
+                throw e; // 向上抛出异常以触发 alert
+            }
         }
 
         function parseFrontMatter(markdown) {
@@ -713,7 +743,7 @@
                 const content = markdown.replace(frontMatterRegex, '');
                 return { frontMatter, content };
             } catch (e) {
-                console.error('解析 Front Matter 错误:', e);
+                console.error('解析 Front Matter 错误:', e.message, e.stack);
                 return { frontMatter: {}, content: markdown };
             }
         }
@@ -728,12 +758,12 @@
                     html += `<span>标签: ${frontMatter.tags.join(', ')}</span>`;
                 }
                 html += `</div>`;
-                const markedContent = marked.parse(content, { breaks: true });
-                html += `<div class="post-body">${DOMPurify.sanitize(markedContent)}</div>`;
+                const markedContent = marked.parse(content, { breaks: true, gfm: true });
+                html += `<div class="post-body">${DOMPurify.sanitize(markedContent, { ADD_TAGS: ['iframe'], ADD_ATTR: ['allowfullscreen', 'frameborder', 'src'] })}</div>`;
                 preview.innerHTML = html;
                 Prism.highlightAllUnder(preview);
             } catch (e) {
-                console.error('渲染预览错误:', e);
+                console.error('渲染预览错误:', e.message, e.stack);
                 document.getElementById('articlePreview').innerHTML = '<p>预览渲染失败，请检查控制台错误</p>';
             }
         }
@@ -800,9 +830,8 @@ ${content}
                 renderPreview(markdown);
                 return markdown;
             } catch (e) {
-                console.error('生成 Markdown 错误:', e);
+                console.error('生成 Markdown 错误:', e.message, e.stack);
                 alert('生成 Markdown 失败，请检查控制台错误');
-                return '';
             }
         }
 
@@ -816,11 +845,11 @@ ${content}
                 navigator.clipboard.writeText(markdown).then(() => {
                     alert('Markdown 已复制到剪贴板！');
                 }).catch(err => {
-                    console.error('复制失败:', err);
+                    console.error('复制失败:', err.message, err.stack);
                     alert('复制失败，请手动复制右侧内容');
                 });
             } catch (e) {
-                console.error('复制 Markdown 错误:', e);
+                console.error('复制 Markdown 错误:', e.message, e.stack);
                 alert('复制 Markdown 失败，请检查控制台错误');
             }
         }
@@ -840,7 +869,7 @@ ${content}
                 tabs.forEach(tab => tab.classList.remove('active'));
                 document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add('active');
             } catch (e) {
-                console.error('切换选项卡错误:', e);
+                console.error('切换选项卡错误:', e.message, e.stack);
                 alert('选项卡切换失败，请检查控制台错误');
             }
         }
@@ -875,7 +904,7 @@ ${content}
                     preview.scrollTop = scrollRatio * (preview.scrollHeight - preview.clientHeight);
                 }
             } catch (e) {
-                console.error('同步滚动错误:', e);
+                console.error('同步滚动错误:', e.message, e.stack);
             }
         }
 
@@ -890,7 +919,7 @@ ${content}
                 }
                 updatePreview();
             } catch (e) {
-                console.error('切换摘要输入错误:', e);
+                console.error('切换摘要输入错误:', e.message, e.stack);
                 alert('切换摘要输入失败，请检查控制台错误');
             }
         }
@@ -914,7 +943,7 @@ ${content}
         try {
             generateMarkdown(true);
         } catch (e) {
-            console.error('初始化错误:', e);
+            console.error('初始化错误:', e.message, e.stack);
         }
 
         // jQuery-like :contains selector
